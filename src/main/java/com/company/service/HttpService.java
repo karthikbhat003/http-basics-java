@@ -1,6 +1,13 @@
 package com.company.service;
 
+import static org.apache.commons.codec.CharEncoding.UTF_8;
+import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.util.Map;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpHeaders;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -13,11 +20,15 @@ import org.apache.http.util.EntityUtils;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.modelmapper.ModelMapper;
+import org.yaml.snakeyaml.Yaml;
 import com.company.domain.User;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 
 public class HttpService {
+
+    // Get mapping
     public void externalCall() throws IOException {
         CloseableHttpClient httpClient = HttpClients.createDefault();
 
@@ -54,6 +65,7 @@ public class HttpService {
         }
     }
 
+    // Simple Get mapping
     public void internalGetCall() throws IOException {
         CloseableHttpClient httpClient = HttpClients.createDefault();
         try {
@@ -75,10 +87,41 @@ public class HttpService {
         }
     }
 
+    // Git fetch config
+    public void gitYamlGetCall() throws IOException {
+        CloseableHttpClient httpClient = HttpClients.createDefault();
+        try {
+            HttpGet request = new HttpGet("http://localhost:8888/karthikbhat003/yaml-file/develop/user.yaml");
+            CloseableHttpResponse response = httpClient.execute(request);
+
+            try {
+                HttpEntity entity = response.getEntity();
+                final InputStreamReader inputStreamReader = new InputStreamReader(entity.getContent());
+                BufferedReader bufferedReader = new BufferedReader(inputStreamReader);
+                StringBuilder sb = new StringBuilder();
+                String str;
+                while((str = bufferedReader.readLine())!= null){
+                    sb.append(str);
+                    sb.append("\n");
+                }
+                System.out.println(sb.toString());
+                ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
+                User emp = mapper.readValue(sb.toString(), User.class);
+                System.out.println("Received the config... Printing...!");
+                System.out.println(emp.toString());
+            } finally {
+                response.close();
+            }
+        } finally {
+            httpClient.close();
+        }
+    }
+
+    // Post Mapping
     public void getUser() throws IOException {
         CloseableHttpClient httpClient = HttpClients.createDefault();
         final ObjectMapper objectMapper = new ObjectMapper();
-        final User user = new User("karthik bhat this is", "003");
+        final User user = new User("karthik bhat this is", "003", null);
         final String jsonBody = objectMapper.writeValueAsString(user);
         try {
             HttpPost post = new HttpPost("http://localhost:9910/v1/library/user");
